@@ -54,11 +54,11 @@
     <div id="error"></div>
 
     <script>
-      // Helpers to show status & errors
-      const $ = (sel) => document.querySelector(sel);
-      function setStatus(msg) {
+      // Helpers
+      const $ = (s) => document.querySelector(s);
+      const setStatus = (msg) => {
         $("#status").textContent = msg;
-      }
+      };
       function showError(title, details) {
         const box = $("#error");
         box.style.display = "block";
@@ -70,30 +70,29 @@
           <ul style="margin:6px 0 0 18px; line-height:1.5">
             <li>Hard refresh <span class="mono">(Ctrl/Cmd + Shift + R)</span></li>
             <li>Disable ad/script blockers for this page</li>
-            <li>Check that <span class="mono">https://cjrtnc.leaningtech.com</span> isn’t blocked by a firewall</li>
-            <li>Make sure you’re online (CheerpJ downloads ~a few MB on first load)</li>
+            <li>Ensure <span class="mono">https://cjrtnc.leaningtech.com</span> isn’t blocked</li>
+            <li>Stay online — first load fetches a few MB</li>
           </ul>
         </div>`;
         setStatus("Failed to load.");
       }
 
-      // Load CheerpJ 3 loader with robust error/timeout handling
+      // Load CheerpJ loader (v4.2) with timeout + checks
       function loadCheerpJ() {
         return new Promise((resolve, reject) => {
-          const existing = document.getElementById("cheerpj-loader");
-          if (existing) existing.remove();
-
+          const id = "cheerpj-loader";
+          document.getElementById(id)?.remove();
           const s = document.createElement("script");
-          s.id = "cheerpj-loader";
-          s.src = "https://cjrtnc.leaningtech.com/3.0/loader.js";
+          s.id = id;
+          s.src = "https://cjrtnc.leaningtech.com/4.2/loader.js";
           s.async = true;
 
-          const timeout = setTimeout(() => {
-            reject(new Error("Timed out loading CheerpJ loader.js"));
-          }, 30000); // 30s timeout
-
+          const to = setTimeout(
+            () => reject(new Error("Timed out loading CheerpJ loader.js")),
+            30000
+          );
           s.onload = () => {
-            clearTimeout(timeout);
+            clearTimeout(to);
             if (typeof window.cheerpjInit !== "function") {
               reject(new Error("CheerpJ loaded but cheerpjInit is undefined"));
             } else {
@@ -101,7 +100,7 @@
             }
           };
           s.onerror = () => {
-            clearTimeout(timeout);
+            clearTimeout(to);
             reject(new Error("Network error loading CheerpJ loader.js"));
           };
           document.head.appendChild(s);
@@ -114,13 +113,13 @@
           await loadCheerpJ();
 
           setStatus("Initializing Java runtime…");
-          await window.cheerpjInit(); // you can pass options here if needed
+          await window.cheerpjInit(); // options can be passed here if needed
 
           setStatus("Starting Swing UI…");
           await window.cheerpjCreateDisplay(1024, 768);
 
-          // Run your main class with app.jar on classpath
-          await window.cheerpjRunMain("com.staqueue.App", "/app.jar");
+          // IMPORTANT: use /app/ prefix for files hosted at site root
+          await window.cheerpjRunMain("com.staqueue.App", "/app/app.jar");
 
           setStatus(""); // clear once UI is up
         } catch (err) {
@@ -131,8 +130,6 @@
           );
         }
       }
-
-      // Kickoff
       boot();
     </script>
   </body>
