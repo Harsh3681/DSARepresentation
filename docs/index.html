@@ -119,7 +119,8 @@
           await window.cheerpjCreateDisplay(1024, 768);
 
           // IMPORTANT: use /app/ prefix for files hosted at site root
-          await window.cheerpjRunMain("com.staqueue.App", "/app/app.jar");
+          await window.cheerpjRunMain('com.staqueue.App', ['/app/app.jar']);
+
 
           setStatus(""); // clear once UI is up
         } catch (err) {
