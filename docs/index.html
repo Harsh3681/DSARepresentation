@@ -1,26 +1,139 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Staqueue</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- CheerpJ 3 loader (official CDN) -->
-  <script src="https://cjrtnc.leaningtech.com/3.0/loader.js"></script>
-  <style>
-    html,body { height:100%; margin:0; background:#0b0f14; color:#e6e6e6; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
-    #mount { display:flex; align-items:center; justify-content:center; height:100%; }
-    .hint { position:fixed; bottom:10px; left:0; right:0; text-align:center; opacity:.7; font-size:.9rem; }
-  </style>
-</head>
-<body>
-  <div id="mount"></div>
-  <div class="hint">If the window is blank for a while, the Java runtime is still loading…</div>
-  <script>
-    (async () => {
-      await cheerpjInit();
-      await cheerpjCreateDisplay(1024, 768);
-      await cheerpjRunMain("com.staqueue.App", "/app.jar");
-    })();
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Staqueue</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #0b0f14;
+        color: #e6e6e6;
+        font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      #status {
+        position: fixed;
+        inset: auto 0 12px 0;
+        text-align: center;
+        opacity: 0.8;
+        font-size: 0.95rem;
+      }
+      #container {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #error {
+        display: none;
+        max-width: 900px;
+        margin: 24px auto;
+        background: #1b2230;
+        border: 1px solid #2a3446;
+        border-radius: 14px;
+        padding: 16px 18px;
+      }
+      code,
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      a {
+        color: #7eb6ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <div id="status">Loading Java runtime…</div>
+    <div id="error"></div>
+
+    <script>
+      // Helpers to show status & errors
+      const $ = (sel) => document.querySelector(sel);
+      function setStatus(msg) {
+        $("#status").textContent = msg;
+      }
+      function showError(title, details) {
+        const box = $("#error");
+        box.style.display = "block";
+        box.innerHTML = `
+        <div style="font-weight:600;margin-bottom:6px;">${title}</div>
+        <div class="mono" style="white-space:pre-wrap">${details || ""}</div>
+        <div style="margin-top:10px; opacity:.85">
+          Try:
+          <ul style="margin:6px 0 0 18px; line-height:1.5">
+            <li>Hard refresh <span class="mono">(Ctrl/Cmd + Shift + R)</span></li>
+            <li>Disable ad/script blockers for this page</li>
+            <li>Check that <span class="mono">https://cjrtnc.leaningtech.com</span> isn’t blocked by a firewall</li>
+            <li>Make sure you’re online (CheerpJ downloads ~a few MB on first load)</li>
+          </ul>
+        </div>`;
+        setStatus("Failed to load.");
+      }
+
+      // Load CheerpJ 3 loader with robust error/timeout handling
+      function loadCheerpJ() {
+        return new Promise((resolve, reject) => {
+          const existing = document.getElementById("cheerpj-loader");
+          if (existing) existing.remove();
+
+          const s = document.createElement("script");
+          s.id = "cheerpj-loader";
+          s.src = "https://cjrtnc.leaningtech.com/3.0/loader.js";
+          s.async = true;
+
+          const timeout = setTimeout(() => {
+            reject(new Error("Timed out loading CheerpJ loader.js"));
+          }, 30000); // 30s timeout
+
+          s.onload = () => {
+            clearTimeout(timeout);
+            if (typeof window.cheerpjInit !== "function") {
+              reject(new Error("CheerpJ loaded but cheerpjInit is undefined"));
+            } else {
+              resolve();
+            }
+          };
+          s.onerror = () => {
+            clearTimeout(timeout);
+            reject(new Error("Network error loading CheerpJ loader.js"));
+          };
+          document.head.appendChild(s);
+        });
+      }
+
+      async function boot() {
+        try {
+          setStatus("Fetching CheerpJ…");
+          await loadCheerpJ();
+
+          setStatus("Initializing Java runtime…");
+          await window.cheerpjInit(); // you can pass options here if needed
+
+          setStatus("Starting Swing UI…");
+          await window.cheerpjCreateDisplay(1024, 768);
+
+          // Run your main class with app.jar on classpath
+          await window.cheerpjRunMain("com.staqueue.App", "/app.jar");
+
+          setStatus(""); // clear once UI is up
+        } catch (err) {
+          console.error(err);
+          showError(
+            "Could not start the app.",
+            String((err && err.stack) || err)
+          );
+        }
+      }
+
+      // Kickoff
+      boot();
+    </script>
+  </body>
 </html>
