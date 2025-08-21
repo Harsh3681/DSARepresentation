@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Staqueue</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- CheerpJ 3 loader (official CDN) -->
+  <script src="https://cjrtnc.leaningtech.com/3.0/loader.js"></script>
+  <style>
+    html,body { height:100%; margin:0; background:#0b0f14; color:#e6e6e6; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+    #mount { display:flex; align-items:center; justify-content:center; height:100%; }
+    .hint { position:fixed; bottom:10px; left:0; right:0; text-align:center; opacity:.7; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <div id="mount"></div>
+  <div class="hint">If the window is blank for a while, the Java runtime is still loading…</div>
+  <script>
+    (async () => {
+      await cheerpjInit();
+      await cheerpjCreateDisplay(1024, 768);
+      await cheerpjRunMain("com.staqueue.App", "/app.jar");
+    })();
+  </script>
+</body>
+</html>
