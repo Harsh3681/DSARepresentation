@@ -95,7 +95,7 @@
         try {
           setStatus("Initializing Java runtime…");
           ensureCheerpJ();
-          await window.cheerpjInit();
+          await window.cheerpjInit({ version: 8 });
 
           setStatus("Starting Swing UI…");
           await window.cheerpjCreateDisplay(
