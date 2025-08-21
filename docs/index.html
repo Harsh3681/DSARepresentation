@@ -113,7 +113,7 @@
           });
 
           // IMPORTANT: classpath must be an ARRAY; files at site root are under /app/
-          await window.cheerpjRunMain("com.staqueue.App", ["/app/app.jar"]);
+          await window.cheerpjRunMain("com.staqueue.App", "/app/app.jar");
 
           setStatus(""); // clear once UI is up
         } catch (err) {
