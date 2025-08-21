@@ -47,6 +47,13 @@
         color: #7eb6ff;
       }
     </style>
+
+    <!-- reduce CheerpJ console noise; must be set BEFORE the loader -->
+    <script>
+      window.CJ_LOG_LEVEL = "error";
+    </script>
+    <!-- CheerpJ 4.2 loader -->
+    <script src="https://cjrtnc.leaningtech.com/4.2/loader.js"></script>
   </head>
   <body>
     <div id="container"></div>
@@ -77,50 +84,36 @@
         setStatus("Failed to load.");
       }
 
-      // Load CheerpJ loader (v4.2) with timeout + checks
-      function loadCheerpJ() {
-        return new Promise((resolve, reject) => {
-          const id = "cheerpj-loader";
-          document.getElementById(id)?.remove();
-          const s = document.createElement("script");
-          s.id = id;
-          s.src = "https://cjrtnc.leaningtech.com/4.2/loader.js";
-          s.async = true;
-
-          const to = setTimeout(
-            () => reject(new Error("Timed out loading CheerpJ loader.js")),
-            30000
-          );
-          s.onload = () => {
-            clearTimeout(to);
-            if (typeof window.cheerpjInit !== "function") {
-              reject(new Error("CheerpJ loaded but cheerpjInit is undefined"));
-            } else {
-              resolve();
-            }
-          };
-          s.onerror = () => {
-            clearTimeout(to);
-            reject(new Error("Network error loading CheerpJ loader.js"));
-          };
-          document.head.appendChild(s);
-        });
+      // Extra safety: verify the loader actually defined the API
+      function ensureCheerpJ() {
+        if (typeof window.cheerpjInit !== "function") {
+          throw new Error("CheerpJ loaded but cheerpjInit is undefined");
+        }
       }
 
       async function boot() {
         try {
-          setStatus("Fetching CheerpJ…");
-          await loadCheerpJ();
-
           setStatus("Initializing Java runtime…");
-          await window.cheerpjInit(); // options can be passed here if needed
+          ensureCheerpJ();
+          await window.cheerpjInit();
 
           setStatus("Starting Swing UI…");
-          await window.cheerpjCreateDisplay(1024, 768);
+          await window.cheerpjCreateDisplay(
+            window.innerWidth,
+            window.innerHeight,
+            document.getElementById("container") // mount here
+          );
+          // keep canvas sized to the viewport
+          window.addEventListener("resize", () => {
+            const canvas = document.querySelector("canvas");
+            if (canvas) {
+              canvas.width = window.innerWidth;
+              canvas.height = window.innerHeight;
+            }
+          });
 
-          // IMPORTANT: use /app/ prefix for files hosted at site root
-          await window.cheerpjRunMain('com.staqueue.App', ['/app/app.jar']);
-
+          // IMPORTANT: classpath must be an ARRAY; files at site root are under /app/
+          await window.cheerpjRunMain("com.staqueue.App", ["/app/app.jar"]);
 
           setStatus(""); // clear once UI is up
         } catch (err) {
